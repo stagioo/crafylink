@@ -4,16 +4,24 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase"; // Ajusta la ruta según tu estructura
 import { useRouter } from "next/navigation";
+
 export default function Settings() {
   const router = useRouter();
-
   const [userLink, setUserLink] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [status, setStatus] = useState("");
 
   useEffect(() => {
-    // Obtener el enlace del usuario desde Supabase
+    // Obtener el enlace del usuario desde localStorage y Supabase
     const fetchUserLink = async () => {
+      // Primero, intentar recuperar desde localStorage
+      const savedLink = localStorage.getItem("userLink") || "";
+      if (savedLink) {
+        setUserLink(savedLink);
+        setInputValue(savedLink);
+      }
+
+      // Luego, verificar en Supabase
       const { data: user } = await supabase.auth.getUser();
       if (user?.user) {
         const { data, error } = await supabase
@@ -24,6 +32,7 @@ export default function Settings() {
         if (data && !error) {
           setUserLink(data.user_link);
           setInputValue(data.user_link);
+          localStorage.setItem("userLink", data.user_link); // Actualizar localStorage
         }
       }
     };
