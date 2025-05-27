@@ -24,14 +24,56 @@ export default function Dashboard() {
 
   useEffect(() => {
     const fetchUserData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const avatarUrl = user.user_metadata?.avatar_url;
-        const fullName = user.user_metadata?.full_name || user.user_metadata?.name;
-        setUserData({
-          avatar_url: typeof avatarUrl === 'string' ? avatarUrl : null,
-          name: typeof fullName === 'string' ? fullName : null,
-        });
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const avatarUrl = user.user_metadata?.avatar_url;
+          const fullName = user.user_metadata?.full_name || user.user_metadata?.name;
+          
+          // Primero intentamos obtener el perfil existente
+          const { data: existingProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', user.id)
+            .single();
+
+          // Si no existe el perfil, lo creamos
+          if (!existingProfile) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: user.id,
+                avatar_url: avatarUrl,
+                full_name: fullName,
+                updated_at: new Date().toISOString(),
+              });
+
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+            }
+          } else {
+            // Si existe, lo actualizamos
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                avatar_url: avatarUrl,
+                full_name: fullName,
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', user.id);
+
+            if (updateError) {
+              console.error('Error updating profile:', updateError);
+            }
+          }
+
+          setUserData({
+            avatar_url: typeof avatarUrl === 'string' ? avatarUrl : null,
+            name: typeof fullName === 'string' ? fullName : null,
+          });
+        }
+      } catch (error) {
+        console.error('Error in fetchUserData:', error);
       }
     };
 
