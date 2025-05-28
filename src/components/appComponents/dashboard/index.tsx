@@ -132,7 +132,7 @@ export default function Dashboard() {
         setStatus("Error al guardar el contenido");
         console.error("Error:", error);
       } else {
-        setStatus("Contenido guardado con éxito");
+        setStatus("saved!");
       }
     } catch (error) {
       setStatus("Error inesperado");
