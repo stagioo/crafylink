@@ -8,17 +8,17 @@ interface UserLinkPageProps {
 export default async function UserLinkPage({ params }: UserLinkPageProps) {
   const { userLink } = params;
 
-  // Consultar el enlace en Supabase
+  // Consultar el enlace y el contenido en Supabase
   const { data, error } = await supabase
-    .from("user_links")
-    .select("user_id")
-    .eq("user_link", userLink)
+    .from("editable_page")
+    .select("user_id, content")
+    .eq("link", userLink)
     .single();
 
   if (error || !data) {
     return (
       <div className="flex justify-center items-center h-screen">
-        <h1 className="text-2xl">Enlace no encontrado: {userLink}</h1>
+        <h1 className="text-2xl">Página no encontrada</h1>
       </div>
     );
   }
@@ -45,7 +45,7 @@ export default async function UserLinkPage({ params }: UserLinkPageProps) {
           <AvatarImage src={userData.avatar_url || ""} alt="Profile" />
           <AvatarFallback>{userData.full_name?.[0] || userData.name?.[0] || "U"}</AvatarFallback>
         </Avatar>
-        <h1 className="text-2xl">Esta página es de {userData.full_name || userData.name || "Usuario"}</h1>
+        <h1 className="text-2xl">{data.content}</h1>
       </div>
     </div>
   );
