@@ -52,23 +52,42 @@ export default function Settings() {
       return;
     }
 
-    // Intentar guardar el enlace en Supabase
-    const { error } = await supabase.from("user_links").upsert({
-      user_id: user.user.id,
-      user_link: inputValue.trim(),
-    });
+    try {
+      // Iniciar una transacción para asegurar la integridad de los datos
+      const { error: userLinkError } = await supabase.from("user_links").upsert({
+        user_id: user.user.id,
+        user_link: inputValue.trim(),
+      });
 
-    if (error) {
-      if (error.code === "23505") {
-        setStatus("Este enlace ya está en uso");
-      } else {
-        setStatus("Error al guardar el enlace");
+      if (userLinkError) {
+        if (userLinkError.code === "23505") {
+          setStatus("Este enlace ya está en uso");
+        } else {
+          setStatus("Error al guardar el enlace");
+        }
+        return;
       }
-    } else {
+
+      // Crear o actualizar la entrada en editable_page
+      const { error: editablePageError } = await supabase.from("editable_page").upsert({
+        user_id: user.user.id,
+        link: inputValue.trim(),
+        content: "This text is by default. You should edit it.",
+        updated_at: new Date().toISOString(),
+      });
+
+      if (editablePageError) {
+        setStatus("Error al crear la página editable");
+        return;
+      }
+
       setStatus("Enlace guardado con éxito");
       setUserLink(inputValue.trim());
       localStorage.setItem("userLink", inputValue.trim());
       router.push("/dashboard");
+    } catch (error) {
+      console.error("Error:", error);
+      setStatus("Error inesperado al guardar los datos");
     }
   };
 
