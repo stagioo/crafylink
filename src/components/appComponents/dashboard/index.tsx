@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
+
 export function AvatarDemo({ src }: { src: string }) {
   return (
     <Avatar>
@@ -23,20 +24,44 @@ export default function Dashboard() {
   });
 
   const [text, setText] = useState<string>("");
+  const [userLink, setUserLink] = useState<string>("");
+  const [status, setStatus] = useState<string>("");
 
   const handleTChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setText(e.target.value);
   };
+
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const avatarUrl = user.user_metadata?.avatar_url;
-          const fullName =
-            user.user_metadata?.full_name || user.user_metadata?.name;
+          const fullName = user.user_metadata?.full_name || user.user_metadata?.name;
+
+          // Obtener el user_link del usuario
+          const { data: linkData } = await supabase
+            .from("user_links")
+            .select("user_link")
+            .eq("user_id", user.id)
+            .single();
+
+          if (linkData) {
+            setUserLink(linkData.user_link);
+          }
+
+          // Obtener el contenido actual de la página
+          if (linkData) {
+            const { data: pageData } = await supabase
+              .from("editable_page")
+              .select("content")
+              .eq("link", linkData.user_link)
+              .single();
+
+            if (pageData) {
+              setText(pageData.content);
+            }
+          }
 
           // Primero intentamos obtener el perfil existente
           const { data: existingProfile } = await supabase
@@ -88,6 +113,33 @@ export default function Dashboard() {
     fetchUserData();
   }, []);
 
+  const handleSubmit = async () => {
+    if (!userLink) {
+      setStatus("No tienes un link configurado");
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("editable_page")
+        .update({
+          content: text,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("link", userLink);
+
+      if (error) {
+        setStatus("Error al guardar el contenido");
+        console.error("Error:", error);
+      } else {
+        setStatus("Contenido guardado con éxito");
+      }
+    } catch (error) {
+      setStatus("Error inesperado");
+      console.error("Error:", error);
+    }
+  };
+
   return (
     <>
       <div>
@@ -108,9 +160,10 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="flex gap-3 mt-10">
-          <Input type="text" onChange={handleTChange}></Input>
-          <Button>Send</Button>
+          <Input type="text" value={text} onChange={handleTChange} />
+          <Button onClick={handleSubmit}>Send</Button>
         </div>
+        {status && <p className="text-sm text-gray-600">{status}</p>}
       </div>
     </>
   );
