@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase"; // Ajusta la ruta según tu estructura
 import { useRouter } from "next/navigation";
 
-export default function Settings() {
+export default function GetURL() {
   const router = useRouter();
   const [userLink, setUserLink] = useState("");
   const [inputValue, setInputValue] = useState("");
@@ -54,10 +54,12 @@ export default function Settings() {
 
     try {
       // Iniciar una transacción para asegurar la integridad de los datos
-      const { error: userLinkError } = await supabase.from("user_links").upsert({
-        user_id: user.user.id,
-        user_link: inputValue.trim(),
-      });
+      const { error: userLinkError } = await supabase
+        .from("user_links")
+        .upsert({
+          user_id: user.user.id,
+          user_link: inputValue.trim(),
+        });
 
       if (userLinkError) {
         if (userLinkError.code === "23505") {
@@ -69,12 +71,14 @@ export default function Settings() {
       }
 
       // Crear o actualizar la entrada en editable_page
-      const { error: editablePageError } = await supabase.from("editable_page").upsert({
-        user_id: user.user.id,
-        link: inputValue.trim(),
-        content: "This text is by default. You should edit it.",
-        updated_at: new Date().toISOString(),
-      });
+      const { error: editablePageError } = await supabase
+        .from("editable_page")
+        .upsert({
+          user_id: user.user.id,
+          link: inputValue.trim(),
+          content: "This text is by default. You should edit it.",
+          updated_at: new Date().toISOString(),
+        });
 
       if (editablePageError) {
         setStatus("Error al crear la página editable");
