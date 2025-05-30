@@ -13,16 +13,23 @@ export function AvatarDemo() {
 interface BPProps {
   Type?: "row" | "col";
   children?: ReactNode;
+  className?: String;
+  onClick?: () => void;
 }
 
-export default function BP({ Type, children }: BPProps) {
+export default function BP({ Type, children, className, onClick }: BPProps) {
   const layout =
     Type === "col"
       ? "flex-col gap-0 items-center"
       : "flex-row gap-3 items-center";
 
   return (
-    <div className="w-[200px] cursor-pointer h-[350px] border border-5 rounded-lg p-5">
+    <div
+      className={`w-[200px] cursor-pointer h-[350px] border border-5 border-gray-300 rounded-lg p-5 ${
+        className || ""
+      } `}
+      onClick={onClick}
+    >
       <div className={`w-full flex ${layout}`}>
         {children || (
           <>
